@@ -1,4 +1,4 @@
-FROM ubuntu:24.04 AS build
+FROM python:3.11-slim AS build
 
 ARG BUILD_DATE=static
 
@@ -6,23 +6,22 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get -qq -y update \
     && apt-get -qq -y upgrade \
     && apt-get -qq -y install --no-install-recommends \
-    apt-transport-https ca-certificates build-essential gnupg \
-    tzdata curl python3-pip python3-dev python3-venv \
-    libicu-dev pkg-config libxml2-dev libxslt1-dev libleveldb-dev libleveldb1d \
+    build-essential gnupg tzdata curl \
+    libicu-dev pkg-config libxml2-dev libxslt1-dev libleveldb-dev \
     && apt-get -qq -y autoremove \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-RUN python3 -m venv /venv
+RUN python -m venv /venv
 ENV PATH="/venv/bin:$PATH"
-RUN pip3 install --no-cache-dir -U pip
+RUN pip install --no-cache-dir -U pip
 
 COPY zavod /opensanctions/zavod
 RUN pip install --no-cache-dir -e /opensanctions/zavod
 WORKDIR /opensanctions
 
 # ----------------------------------------------------------------------------------------
-FROM ubuntu:24.04 AS runtime
+FROM python:3.11-slim AS runtime
 
 LABEL org.opencontainers.image.title="OpenSanctions ETL"
 LABEL org.opencontainers.image.licenses=MIT
@@ -33,9 +32,9 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get -qq -y update \
     && apt-get -qq -y upgrade \
     && apt-get -qq -y install --no-install-recommends \
-    locales apt-transport-https ca-certificates gnupg \
-    tzdata curl python3-pip python3-venv poppler-utils poppler-data \
-    libicu74 libleveldb1d \
+    locales gnupg tzdata curl ca-certificates \
+    poppler-utils poppler-data \
+    libicu-dev libleveldb1d \
     && apt-get -qq -y autoremove \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
